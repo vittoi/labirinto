@@ -5,6 +5,15 @@ TagManager:
   serializedVersion: 2
   tags:
   - Inventario
+  - DraggingItem
+  - Canvas
+  - CraftSystem
+  - Item
+  - Slots
+  - Panel
+  - Slot
+  - ResultSlot
+  - ItemIcon
   layers:
   - Default
   - TransparentFX
@@ -12,8 +21,8 @@ TagManager:
   - 
   - Water
   - UI
-  - 
-  - 
+  - efeitos
+  - grudavel
   - 
   - 
   - 

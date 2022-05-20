@@ -8,8 +8,11 @@ public class inventario : MonoBehaviour
     public GameObject emptyBt;
     public RectTransform barraFullTime;
     public RectTransform estoquePrincipal;
-    public GameObject[] itens = new GameObject[40];
+    public List<GameObject> itemTest = new List<GameObject>();
 
+    private List<int> itemId = new List<int>();
+    private List<GameObject> bts = new List<GameObject>();//Lista com os ids dos itens, e o index é onde ele está no inventario
+    private tipAction tip;
     public struct transferencia {
         public int index;
         public Transform pai;
@@ -18,320 +21,240 @@ public class inventario : MonoBehaviour
 
     private int firstEmpty = 0;
     private transferencia itemAtual;
-    private bool wClicked = false;
+    private bool bolsa = false;
     // Start is called before the first frame update
+    void Awake(){
+        initializeLists();
+        tip = GameObject.Find("tipAction").GetComponent<tipAction>();
+    }
     void Start()
     {
         itemAtual.index = -1;
         desenhaMenu();
-        wClicked = false;
     }
+    void initializeLists(){
+        for(int i = 0; i < 40; i++){
+            itemId.Add(-1);
 
+            bts.Add(Instantiate(emptyBt));
+            Transform parent = i<10 ? barraFullTime : estoquePrincipal;
+            bts[i].transform.SetParent(parent);
+            bts[i].name = "Slot"+ i;
+            bts[i].transform.localScale = new Vector3(1,1,1);
+        }   
+    }
     // Update is called once per frame
     void Update()
     {
+        if(Input.GetKeyDown(KeyCode.J)){
+            
+            addItem(Instantiate(itemTest[1]));
+        }
+        if(Input.GetKeyDown(KeyCode.Q)){
+            
+            addItem(Instantiate(itemTest[2]));
+        }
+        if(Input.GetKeyDown(KeyCode.I)){
+            estoquePrincipal.transform.parent.parent.gameObject.SetActive(!bolsa);
+            bolsa = !bolsa;
+        }
     }
 
     void desenhaMenu()
     {
         while (barraFullTime.childCount<10) {
             
-            GameObject item = Instantiate(itens[barraFullTime.childCount], barraFullTime.position, Quaternion.identity) as GameObject;
-            item.GetComponentInChildren<Text>().text = "";
+            GameObject item = Instantiate(bts[barraFullTime.childCount], barraFullTime.position, Quaternion.identity) as GameObject;
+            item.transform.GetChild(0).GetComponentInChildren<Text>().text = "";
 
-            itens[barraFullTime.childCount] = item;
+            bts[barraFullTime.childCount] = item;
 
             item.transform.SetParent(barraFullTime);
             
 
         }
         while (estoquePrincipal.childCount< 30) {
-            GameObject item = Instantiate(itens[estoquePrincipal.childCount+10], estoquePrincipal.position, Quaternion.identity) as GameObject;
+            GameObject item = Instantiate(bts[estoquePrincipal.childCount+10], estoquePrincipal.position, Quaternion.identity) as GameObject;
             
-            item.GetComponentInChildren<Text>().text = "";
+            item.transform.GetChild(0).GetComponentInChildren<Text>().text = "";
             
 
-            itens[estoquePrincipal.childCount+10] = item;
+            bts[estoquePrincipal.childCount+10] = item;
 
             item.transform.SetParent(estoquePrincipal);
         }
     }
-    public void setAtual(transferencia atual) {
-        itemAtual = atual;
-    }
-    public transferencia getAtual()
-    {
-        return itemAtual;
-    }
-
-    public void trocaItens(Transform segurado, Transform destino) {
-        Transform aux;
-        Item presente = destino.GetComponent<Item>();
-        Item entrando = segurado.GetComponent<Item>();
-
-        if (presente != null && presente.id == entrando.id)
-        {
-
-
-            presente.qtd += entrando.qtd;
-            if (presente.qtd > entrando.qtdMax)
-            {
-
-                //altero a qtd do presente e salvo ele no slot dele msmo, e manter o atual no index anterior e colocar a qtd subitraida
-                presente.qtd = entrando.qtdMax;
-                //atualizar texto do presente
-
-                //coloca o gameobject no vetor
-                itens[presente.index] = presente.gameObject;
-
-                //atualiza qtd do entrando, atualiza texto do entrando
-                //volta o gameobject para a posicao anterior 
-                entrando.qtd = presente.qtd - entrando.qtdMax;
-                itens[entrando.index] = entrando.gameObject;
-
-                if (entrando.index < 10 && entrando.index > -1)
-                {
-                    segurado.SetParent(barraFullTime);
-                    aux = barraFullTime.GetChild(entrando.index);
-                    aux.SetParent(null);
-                    Destroy(aux.gameObject);
-                    segurado.SetSiblingIndex(entrando.index);
-                }
-                else if(entrando.index >-1){
-                    segurado.SetParent(estoquePrincipal);
-                    aux = estoquePrincipal.GetChild(entrando.index);
-                    aux.SetParent(null);
-                    Destroy(aux.gameObject);
-                    segurado.SetSiblingIndex(entrando.index);
-                }
-
-                if (entrando.qtd > 0)
-                {
-                    entrando.gameObject.GetComponentInChildren<Text>().text = "." + entrando.qtd;
-                }
-                else
-                {
-                    entrando.gameObject.GetComponentInChildren<Text>().text = "";
-                }
-            }
-            presente.qtd = entrando.qtdMax;
-            itens[presente.index] = presente.gameObject;
-       
-            if (presente.qtd > 0)
-            {
-                presente.gameObject.GetComponentInChildren<Text>().text = "." + presente.qtd;
-            }
-            else
-            {
-                presente.gameObject.GetComponentInChildren<Text>().text = "";
-            }
-
+    
+    public int getIndexByGameObject(Transform slot){
+        if(slot.parent == barraFullTime){
+            return slot.GetSiblingIndex();
         }
-        else
-        {
-            //So troca os dois de posicao
-            aux = segurado;
-            itens[entrando.index] = destino.gameObject;
-            itens[presente.index] = aux.gameObject;
+        return slot.GetSiblingIndex() + 10;
+    
+    }
+    public void setBtnOnIndex(GameObject btn, int index){
+        bts[index] = btn;
+    }
+
+    public void trocaItens(GameObject segurado, GameObject destino, GameObject origem) { //Slot que ocupara, slot antigo item segurado
+        GameObject itemOnDest = destino.transform.childCount>1 ? destino.transform.GetChild(1).gameObject : null;
+        print(destino.name);
+        ItemEx itemSeg = segurado.GetComponent<ItemEx>();
+        ItemEx itemDest = itemOnDest!= null? itemOnDest.GetComponent<ItemEx>(): null;
+        int iOrig = getIndexByGameObject(origem.transform);
+        int iDest = getIndexByGameObject(destino.transform);
+             
+        if(itemOnDest!= null){
             
+            int qtd = itemSeg.qtd + itemDest.qtd;
+            if(itemDest.id == itemSeg.id){
+                if(qtd > itemSeg.qtdMax){
+                    oculpaEspacoComItem(iOrig, qtd - itemSeg.qtdMax, segurado);
+                    qtd = itemSeg.qtdMax;
+                    
+                }else{
+                    oculpaEspacoComVazio(iOrig);
+                }
+                atualizaQtd(iDest, qtd);
+                
+            } else{
+                oculpaEspacoComItem(iOrig, itemDest.qtd, itemOnDest);
+                oculpaEspacoComItem(iDest, itemSeg.qtd, segurado);
+            }
+        }else{
+            itemId[iOrig] = -1;
+            oculpaEspacoComItem(iDest, itemSeg.qtd, segurado);
         }
+        
     }
 
     public void addItem(GameObject item) {
+        firstEmpty = -1;
+        ItemEx entrando;
+        ItemEx presente = null;
 
-        Item entrando;
-        Item presente = null;
+        entrando = item.GetComponent<ItemEx>();
+        List<int> allPos = itemId.FindAll(i => entrando.id == i);
 
-        GameObject itemAux ;
-        entrando = item.GetComponent<Item>();
+        firstEmpty = itemId.IndexOf(-1);
+        int ultimoVisto = 0;
 
-        if ((firstEmpty >= 10 && firstEmpty < 40) || (entrando.index >= 10 && firstEmpty == -1)) 
-        {
-            
-            if (entrando.index >= 0)
-            {
-                presente = itens[entrando.index].GetComponent<Item>();
-            }
+        if(allPos.Count > 0){
+            for(int i=0; i< allPos.Count; i++){
+                
+                int position = itemId.IndexOf(entrando.id, ultimoVisto);
+                ultimoVisto = position+1;
 
-            if (presente != null && presente.id == entrando.id && entrando.index >= 0)
-            {
+                presente = bts[position].transform.GetChild(1).GetComponent<ItemEx>();
+                int qtd = presente.qtd<entrando.qtdMax ? entrando.qtd+ presente.qtd : entrando.qtd;
 
-
-                presente.qtd += entrando.qtd;
-                if (presente.qtd > entrando.qtdMax)
-                {
-                    if (firstEmpty >= 10 && firstEmpty < 40)
-                    {
-                        itemAux = Instantiate(item, estoquePrincipal.position, Quaternion.identity) as GameObject;
-
-                        itemAux.transform.SetParent(estoquePrincipal);
-                        Transform retirando = estoquePrincipal.GetChild(firstEmpty - 10);
-
+                if(presente.qtd < entrando.qtdMax){
+                    if(qtd>= entrando.qtdMax){
+                        entrando.qtd = qtd - entrando.qtdMax;
+                        atualizaQtd(position, entrando.qtdMax);
                         
-                        retirando.SetParent(null);
-                        Destroy(retirando.gameObject);
-                        itemAux.transform.SetSiblingIndex(firstEmpty - 10);
-
-                        itemAux.GetComponent<Item>().qtd = presente.qtd - entrando.qtdMax;
-
-
-
-
-                        itens[firstEmpty] = null;
-
-                        itens[firstEmpty] = itemAux;
-
-                        entrando.index = firstEmpty;
-                        item.GetComponent<Item>().index = firstEmpty;
-
-                        if (itemAux.GetComponent<Item>().qtd > 0)
-                        {
-                            itemAux.GetComponentInChildren<Text>().text = "." + item.GetComponent<Item>().qtd;
-                        }
-                        else
-                        {
-                            itemAux.GetComponentInChildren<Text>().text = "";
-                        }
-                        firstEmpty++;
+                    }else{
+                        entrando.qtd = 0;
+                        atualizaQtd(position, qtd);
                     }
-                    else {
-                        item.GetComponent<Item>().index = -1;
-                    }
-                    presente.qtd = entrando.qtdMax;
                 }
-                if (presente.qtd > 0)
-                {
-                    presente.gameObject.GetComponentInChildren<Text>().text = "." + presente.qtd;
-                }
-                else
-                {
-                    presente.gameObject.GetComponentInChildren<Text>().text = "";
-                }
-               
-            }
-            else
-            {
-                itemAux = Instantiate(item, estoquePrincipal.position, Quaternion.identity) as GameObject;
                 
-                
-                if (item.GetComponent<Item>().qtd > 0)
-                {
-                    itemAux.GetComponentInChildren<Text>().text = "." + item.GetComponent<Item>().qtd;
-                }
-                else
-                {
-                    itemAux.GetComponentInChildren<Text>().text = "";
-                }
 
-                itemAux.transform.SetParent(estoquePrincipal);
-                Transform retirando = estoquePrincipal.GetChild(firstEmpty - 10);
-                retirando.SetParent(null);
-                Destroy(retirando.gameObject);
-                itemAux.transform.SetSiblingIndex(firstEmpty - 10);
-
-                itens[firstEmpty] = null;
-
-                itens[firstEmpty] = itemAux;
-
-                entrando.index = firstEmpty;
-                item.GetComponent<Item>().index = firstEmpty;
-
-                firstEmpty++;
             }
-            if (firstEmpty == 40) {
-                firstEmpty = -1;
+            if(entrando.qtd>0 && firstEmpty>-1){
+
+                oculpaEspacoComItem(firstEmpty, entrando.qtd, Instantiate(item));
             }
-        }
-        else if ((firstEmpty>=0 && firstEmpty < 10) || (entrando.index >= 0 && firstEmpty ==-1) )
-        {
             
-            entrando = item.GetComponent<Item>();
-            if (entrando.index >= 0)
-            {
-                presente = itens[entrando.index].GetComponent<Item>();
-            }
-
-            if (presente != null && presente.id == entrando.id && entrando.index >= 0)
-            {
+            if(firstEmpty == -1){
+                tip.showText("\" Inventário Cheio\"");
+                tip.fadeOut();
                 
-
-                presente.qtd += entrando.qtd;
-                if (presente.qtd > entrando.qtdMax)
-                {
-                    if (firstEmpty >= 0 && firstEmpty < 40)
-                    {
-                        itemAux = Instantiate(item, barraFullTime.position, Quaternion.identity) as GameObject;
-
-                        itemAux.transform.SetParent(barraFullTime);
-                        Transform retirando = barraFullTime.GetChild(firstEmpty);
-                        retirando.SetParent(null);
-                        Destroy(retirando.gameObject);
-                        itemAux.transform.SetSiblingIndex(firstEmpty);
-
-                        itemAux.GetComponent<Item>().qtd = presente.qtd - entrando.qtdMax;
-
-
-
-
-                        itens[firstEmpty] = null;
-
-                        itens[firstEmpty] = itemAux;
-                        entrando.index = firstEmpty;
-                        item.GetComponent<Item>().index = firstEmpty;
-
-                        if (itemAux.GetComponent<Item>().qtd > 0)
-                        {
-                            itemAux.GetComponentInChildren<Text>().text = "." + item.GetComponent<Item>().qtd;
-                        }
-                        else
-                        {
-                            itemAux.GetComponentInChildren<Text>().text = "";
-                        }
-
-                        firstEmpty++;
-                    }
-                    else {
-                        item.GetComponent<Item>().index = -1;
-                    }
-                    presente.qtd = entrando.qtdMax;
-                }
-                presente.gameObject.GetComponentInChildren<Text>().text = "." + presente.qtd;
             }
-            else
-            {
-                itemAux = Instantiate(item, barraFullTime.position, Quaternion.identity) as GameObject;
+            Destroy(item);
+        }else{
+            oculpaEspacoComItem(firstEmpty, entrando.qtd, item);
+        }
 
-                if (item.GetComponent<Item>().qtd > 0)
-                {
-                    itemAux.GetComponentInChildren<Text>().text = "." + item.GetComponent<Item>().qtd;
-                }
-                else
-                {
-                    itemAux.GetComponentInChildren<Text>().text = "";
-                }
+    }
+    //TODO trocar prints por Text
+    //TODO trocar destroy por animacoes
+    public bool remove(int id, int qtd){
+        List<int> allPos = itemId.FindAll(i => id == i);
+        List<int> toSetEmpty = new List<int>();
+        int ultimoVisto = 0;
+        
+        if(allPos.Count > 0){
+            for(int i=0; i< allPos.Count; i++){
                 
+                int position = itemId.IndexOf(id, ultimoVisto);
+                ultimoVisto = position+1;
+                ItemEx item = bts[position].transform.GetChild(1).GetComponent<ItemEx>();
 
-                itemAux.transform.SetParent(barraFullTime);
+                if(item.qtd- qtd > 0){
+                    atualizaQtd(position, item.qtd- qtd);
+                    qtd = item.qtd- qtd;
+                }else if(qtd > 0 && item.qtd - qtd<= 0){//todos os slots q vao zerar
+                    toSetEmpty.Add(position);
+                    qtd = qtd - item.qtd;
+                }else{
+                    print("nao tem o item");
+                }
 
-                Transform retirando = barraFullTime.GetChild(firstEmpty);
-                retirando.SetParent(null);
-                Destroy(retirando.gameObject);
-                itemAux.transform.SetSiblingIndex(firstEmpty);
-
-                itens[firstEmpty] = null;
-
-                itens[firstEmpty] = itemAux;
-                entrando.index = firstEmpty;
-                item.GetComponent<Item>().index = firstEmpty;
-                firstEmpty++;
+            }
+            if(qtd <= 0 ){//Se sumiu toda a qtd foi cobrado correto
+                foreach(int position in toSetEmpty){
+                    esvaziaSlot(bts[position]);
+                }
+                return true;
+            }else{
+                print("Nao tem a quantidade necessaria");
             }
         }
-        else {
-            print("Inventario cheio");
+        
+        return false;
+        
+    }
+    public GameObject getEmptyBt(){
+        return emptyBt;
+    }
+    private void atualizaQtd(int index, int qtd){
+        bts[index].transform.GetChild(1).GetComponent<ItemEx>().qtd = qtd;
+        bts[index].transform.GetChild(0).GetComponentInChildren<Text>().text = "." + qtd;
+    }
+    private void oculpaEspacoComItem(int index, int qtd, GameObject item){
+        item.transform.SetParent(bts[index].transform);
+        item.transform.SetAsLastSibling(); 
+        item.GetComponent<itemFunctions>().enabled = false;
+        item.transform.GetChild(0).gameObject.SetActive(false);
+        ItemEx btsItem = item.GetComponent<ItemEx>();//Verificar com quantos components ficaram no slot
+
+        if(qtd > 0){
+            atualizaQtd(index, qtd);
+            bts[index].GetComponent<Image>().sprite = btsItem.icone;
+        }else{
+            bts[index].transform.GetChild(0).GetComponentInChildren<Text>().text = "";
         }
+        itemId[index] = btsItem.id;
+        bts[index].GetComponent<seguraItem>().enabled = true;
+
+    }
+    public void esvaziaSlot(GameObject slot){
+        int i = getIndexByGameObject(slot.transform);
+        oculpaEspacoComVazio(i);
+        if(slot.transform.childCount>1)
+            Destroy(slot.transform.GetChild(1).gameObject);
     }
 
+    private void oculpaEspacoComVazio(int index){
+        itemId[index] = -1;
+        bts[index].GetComponent<Image>().sprite = emptyBt.GetComponent<Image>().sprite;
+        bts[index].GetComponent<seguraItem>().enabled = false;
+        bts[index].transform.GetChild(0).GetComponentInChildren<Text>().text = "";
 
+    }
     
 
 }
+
+ 
