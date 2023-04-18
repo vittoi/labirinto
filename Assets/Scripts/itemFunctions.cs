@@ -6,11 +6,13 @@ using UnityEngine.UI;
 public class itemFunctions : MonoBehaviour
 {
     private Transform player;
-    private tipAction tip;
     private GameObject canvas;
+
+    public float distanceToTip = 5;
+    public float distanceToFade = 7;
+
     void Awake(){
-        player = GameObject.Find("Player").transform;
-        tip = GameObject.Find("tipAction").GetComponent<tipAction>();
+        player = Manager.Instance.player;
         canvas = GameObject.Find("menuCanvas");
     }
     // Update is called once per frame
@@ -25,18 +27,20 @@ public class itemFunctions : MonoBehaviour
     }
 
     void tipByProximity(){
-        if(Vector3.Distance(player.position, transform.position) < 5f){
-            tip.showText("\"Pressione E para pegar\"");
+        if(Vector3.Distance(player.position, transform.position) < distanceToTip){
+            Manager.Instance.messagetip.showText("\"Pressione E para pegar\"");
             if(Input.GetKeyDown(KeyCode.E)){
                 insertOnInventory();
-                tip.fadeOut();
+                Manager.Instance.messagetip.fadeOut();
                 Destroy(this.gameObject);
             }
-        }else if(Vector3.Distance(player.position, transform.position) < 7f){
-           tip.fadeOut();
+        }else if(Vector3.Distance(player.position, transform.position) < distanceToFade)
+        {
+            Manager.Instance.messagetip.fadeOut();
         }
     }
     void insertOnInventory(){//insere o item no inventario
         canvas.GetComponent<inventario>().addItem(this.gameObject);
     }
+
 }

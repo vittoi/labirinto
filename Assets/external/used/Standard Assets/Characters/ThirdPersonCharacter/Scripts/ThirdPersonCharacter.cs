@@ -15,6 +15,7 @@ namespace UnityStandardAssets.Characters.ThirdPerson
 		[SerializeField] float m_MoveSpeedMultiplier = 1f;
 		[SerializeField] float m_AnimSpeedMultiplier = 1f;
 		[SerializeField] float m_GroundCheckDistance = 0.1f;
+		[SerializeField] float airMultiplier;
 
 		Rigidbody m_Rigidbody;
 		Animator m_Animator;
@@ -45,7 +46,7 @@ namespace UnityStandardAssets.Characters.ThirdPerson
 
 		public void Move(Vector3 move, bool crouch, bool jump)
 		{
-
+			Vector3 nMove = move;
 			// convert the world relative moveInput vector into a local-relative
 			// turn amount and forward amount required to head in the desired
 			// direction.
@@ -55,7 +56,7 @@ namespace UnityStandardAssets.Characters.ThirdPerson
 			move = Vector3.ProjectOnPlane(move, m_GroundNormal);
 			m_TurnAmount = Mathf.Atan2(move.x, move.z);
 			m_ForwardAmount = move.z;
-			
+
 			ApplyExtraTurnRotation();
 			
 
@@ -66,7 +67,7 @@ namespace UnityStandardAssets.Characters.ThirdPerson
 			}
 			else
 			{
-				//HandleAirborneMovement();
+				HandleAirborneMovement(nMove);
 			}
 
 			ScaleCapsuleForCrouching(crouch);
@@ -154,12 +155,13 @@ namespace UnityStandardAssets.Characters.ThirdPerson
 		}
 
 
-		void HandleAirborneMovement()
+		void HandleAirborneMovement(Vector3 move)
 		{
 			// apply extra gravity from multiplier:
 			Vector3 extraGravityForce = (Physics.gravity * m_GravityMultiplier) - Physics.gravity;
-			m_Rigidbody.AddForce(extraGravityForce);
-
+			//m_Rigidbody.AddForce(extraGravityForce);
+			if(m_Rigidbody.velocity.y <0)
+				m_Rigidbody.AddForce(move*Time.deltaTime * airMultiplier);
 			m_GroundCheckDistance = m_Rigidbody.velocity.y < 0 ? m_OrigGroundCheckDistance : 0.01f;
 		}
 
@@ -222,5 +224,9 @@ namespace UnityStandardAssets.Characters.ThirdPerson
 				m_Animator.applyRootMotion = false;
 			}
 		}
+		public void walkingMove(Vector3 move){
+			transform.Translate(move*Time.deltaTime);
+		}
+
 	}
 }
