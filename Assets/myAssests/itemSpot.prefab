@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 1545079237078573331}
   - component: {fileID: 1242284469983213164}
   - component: {fileID: 1278863459614553409}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: waltDown
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -123,7 +123,7 @@ GameObject:
   - component: {fileID: 191998436081145938}
   - component: {fileID: 879177774515930426}
   - component: {fileID: 1338472918561648933}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: wallLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -232,7 +232,7 @@ GameObject:
   - component: {fileID: 4173964215364246862}
   - component: {fileID: 5064367759795283773}
   - component: {fileID: 7496639518730246542}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -332,7 +332,7 @@ GameObject:
   - component: {fileID: 8186513075709280982}
   - component: {fileID: 2001330685849906941}
   - component: {fileID: 3999478151507467502}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: spriteInside
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -408,7 +408,7 @@ GameObject:
   - component: {fileID: 2355253776702618297}
   - component: {fileID: 2845719913297857791}
   - component: {fileID: 5654864486036660814}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -508,7 +508,7 @@ GameObject:
   - component: {fileID: 7301271177506750244}
   - component: {fileID: 7678730811649489082}
   - component: {fileID: 225324018591507213}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: spriteOutside
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -585,7 +585,7 @@ GameObject:
   - component: {fileID: 5208673523084376441}
   - component: {fileID: 2018955024482101819}
   - component: {fileID: 3925113935863693761}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: wallRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -693,7 +693,7 @@ GameObject:
   - component: {fileID: 7302953599356590399}
   - component: {fileID: 4265224045741156942}
   - component: {fileID: 6754753829188501450}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: spriteInside
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -766,7 +766,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3778431311456748859}
-  m_Layer: 0
+  - component: {fileID: 724324917039171331}
+  m_Layer: 9
   m_Name: itemSpot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -791,6 +792,22 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &724324917039171331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3304659948895575033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 1
+  m_Area: 0
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
 --- !u!1 &4263387445599408661
 GameObject:
   m_ObjectHideFlags: 0
@@ -802,7 +819,7 @@ GameObject:
   - component: {fileID: 4823153694070063908}
   - component: {fileID: 7435419527790529760}
   - component: {fileID: 7395161868926975061}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: spriteOutside
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -878,7 +895,7 @@ GameObject:
   - component: {fileID: 3620069488481948900}
   - component: {fileID: 8937509669243328107}
   - component: {fileID: 3002105653662415754}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -980,7 +997,7 @@ GameObject:
   - component: {fileID: 5862434774736370994}
   - component: {fileID: 8580750440116853220}
   - component: {fileID: 9132616094758423184}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: wallUp
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1088,7 +1105,7 @@ GameObject:
   - component: {fileID: 3054873957697629501}
   - component: {fileID: 8966197918911312990}
   - component: {fileID: 6826083414566978722}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: spriteOutside
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1164,7 +1181,7 @@ GameObject:
   - component: {fileID: 6445572688748583063}
   - component: {fileID: 1723910355859187316}
   - component: {fileID: 151735475153151848}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1264,7 +1281,7 @@ GameObject:
   - component: {fileID: 4470958085554567382}
   - component: {fileID: 3196144426279969692}
   - component: {fileID: 6909417975344246335}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: spriteOutside
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1339,7 +1356,7 @@ GameObject:
   - component: {fileID: 6955015114033348088}
   - component: {fileID: 394749223177432000}
   - component: {fileID: 401985125276825780}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: spriteInside
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1414,7 +1431,7 @@ GameObject:
   - component: {fileID: 1424929136127463555}
   - component: {fileID: 4237121793779989867}
   - component: {fileID: 8586548168546893328}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: spriteInside
   m_TagString: Untagged
   m_Icon: {fileID: 0}

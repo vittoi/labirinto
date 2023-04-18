@@ -14,6 +14,8 @@ TagManager:
   - Slot
   - ResultSlot
   - ItemIcon
+  - cams
+  - Enemy
   layers:
   - Default
   - TransparentFX
@@ -23,10 +25,10 @@ TagManager:
   - UI
   - efeitos
   - grudavel
-  - 
-  - 
-  - 
-  - 
+  - chao
+  - obstaculo
+  - Lab
+  - Enemy
   - 
   - 
   - 

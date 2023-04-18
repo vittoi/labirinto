@@ -1,17 +1,24 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
+using UnityEngine.AI;
 
 public class MakeLevel : MonoBehaviour
 {
     public GameObject dataBase;
+    public GameObject initPortal;
     public GameObject itemSpot;
+    public bool buildWithTrees;
+    public bool fogOn = false;
     public int dim = 21;
     public int tamLabirinto =10;
     public int alturaParede = 30;
     public GameObject bushes;
     public Material materialChao;
+    public GameObject navMesh;
     public int densityItens; //qtdItens Por Quadrado = tamanho da resta/ density
                              //Ou seja se eu quiser 4 itens no quadrado de 20 entao dou valor da densidade = 5 
                              //Assim tenho 4 itens no quadrado de tamanho 20 e ir dminuindo conforme diminui o tamnaho dos quadrados
@@ -19,47 +26,88 @@ public class MakeLevel : MonoBehaviour
 
     private int[,] map;//0 = chao livre, 1 = parede, 2 = spawn de item
     private GameObject mapa;
-    //private GameObject floor; 
+    private GameObject floor; 
     private GameObject[,] fisicalMap;
     private GameObject[,] bushesMap;
     private int []where = new int[4];
     private itensList itens;
+
+    private bool firstTime = true;
     
 
 
     // Start is called before the first frame update
     void Start()
     {
+        shuffleLab();
+        firstTime = false;
+        
+    }
+
+    private void Update()
+    {
+        if (Manager.Instance.startLab)
+        {
+            initPortal.SetActive(false);
+        }
+        
+    }
+
+    public void shuffleLab() 
+    {
+        if (!firstTime)
+            Destroy(transform.GetChild(0).gameObject);
+
         itens = dataBase.GetComponent<itensList>();
         map = new int[dim, dim];
         fisicalMap = new GameObject[dim, dim];
-        bushesMap  = new GameObject[dim, dim];
+        bushesMap = new GameObject[dim, dim];
 
         mapa = new GameObject();
         mapa.name = "mapa";
         mapa.transform.parent = GameObject.Find("InitializeGame").transform;
-        mapa.transform.localPosition  = new Vector3(0, 0, 0);
-        
-        
-        //floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        //floor.transform.SetParent(mapa.transform);
-        //floor.name = "chao";
-        //floor.transform.position = new Vector3(0,0,0);
-        //floor.transform.localScale = new Vector3(dim * tamLabirinto, 0.1f, dim* tamLabirinto);
+        mapa.transform.localPosition = new Vector3(0, 0, 0);
+        mapa.AddComponent<MeshRenderer>();
+        mapa.layer = 10;
+
+        #if UNITY_EDITOR
+        var flags = StaticEditorFlags.BatchingStatic | StaticEditorFlags.ContributeGI | StaticEditorFlags.NavigationStatic | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OffMeshLinkGeneration | StaticEditorFlags.ReflectionProbeStatic;
+
+        GameObjectUtility.SetStaticEditorFlags(mapa, flags);
+        #endif
+
+        floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        floor.transform.SetParent(mapa.transform);
+        floor.name = "chao";
+        floor.transform.position = new Vector3(0, 0.01f, 0);
+        floor.transform.localScale = new Vector3(dim * tamLabirinto, 0.1f, dim * tamLabirinto);
+        floor.layer = 10;
+        floor.GetComponent<MeshRenderer>().enabled = false;
+
         //floor.GetComponent<Renderer>().material= materialChao;
 
         makeLab();
 
         desenhaLabirinto();
-        
+
+        Invoke("bakeNav", 0.5f);
+
+        Manager.Instance.setMap(mapa.transform);
+    }
+
+    void bakeNav() {
+        NavMeshSurface com = navMesh.GetComponent<NavMeshSurface>();
+        com.BuildNavMesh();
+       
     }
     bool verifyMatrix()
     {
         for (int i = 0; i < dim; i++)
         {
             int wntb = i%2 == 0? 1: 0;//oq aquele quadrado precisa ser parede ou chao wntb = what need to be
-            if(i <= dim/2 && (map[i,i] != wntb || map[i, dim - i- 1] != wntb || map[dim-i-1, i] != wntb || map[dim - i - 1, dim - i - 1] != wntb)){//verifica se tem alguma quina como abertura ou parede
-                print("era pra ter quina");
+            bool temQ = temQuina(i, wntb);
+            if(temQ){//verifica se tem alguma quina como abertura ou parede
+                
                 return false;
             }
             for (int j = 0; j < dim; j++)
@@ -109,11 +157,14 @@ public class MakeLevel : MonoBehaviour
         }
         return true;
     }
-    void desenhaLabirinto() {
-        var flags = StaticEditorFlags.BatchingStatic | StaticEditorFlags.ContributeGI | StaticEditorFlags.NavigationStatic | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OffMeshLinkGeneration | StaticEditorFlags.ReflectionProbeStatic;
-
-        GameObjectUtility.SetStaticEditorFlags(mapa, flags);
-        //GameObjectUtility.SetStaticEditorFlags(floor, flags);
+    
+    private bool temQuina(int i, int wntb){
+        if(i <= dim/2 && (map[i,i] != wntb || map[i, dim - i- 1] != wntb || map[dim-i-1, i] != wntb || map[dim - i - 1, dim - i - 1] != wntb)){
+            return true;
+        }
+        return false;
+    }
+   void desenhaLabirinto() {
 
         for (int i = 0; i < dim; i++)
         {
@@ -123,7 +174,7 @@ public class MakeLevel : MonoBehaviour
                 {
                     desenhaParede(i, j);
                 } else if (map[i, j] == 3) {
-                    //desenhaItem(i, j);
+                    desenhaItem(i, j);
                 }
             }
         }
@@ -153,7 +204,6 @@ public class MakeLevel : MonoBehaviour
             Vector2Int opening2;
             List<Vector2Int> itens = new List<Vector2Int>();
             Vector2Int aux;
-            int stop = 0;
 
             sorteados = sortCord(where, aresta, all);
             opening = sorteados[0];
@@ -235,7 +285,7 @@ public class MakeLevel : MonoBehaviour
     void desenhaItem(int i, int j) {
         Vector3 position = new Vector3((float)(i - dim / 2) * tamLabirinto, 5f, (float)(j - dim / 2) * tamLabirinto);
         bushesMap[i, j] = Instantiate(itemSpot);
-        //GameObjectUtility.SetStaticEditorFlags(bushesMap[i, j], flags);
+
         bushesMap[i, j].transform.SetParent(mapa.transform);
         bushesMap[i, j].name = "item" + i + " " + j;
         bushesMap[i, j].transform.position = position;//new Vector3(0f, 0f, 0f);
@@ -342,30 +392,109 @@ public class MakeLevel : MonoBehaviour
     void desenhaParede(int i, int j) {
         Vector3 position = new Vector3((float)(i - dim / 2) * tamLabirinto, 0.55f, (float)(j - dim / 2) * tamLabirinto);
         fisicalMap[i, j] = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        fisicalMap[i, j].GetComponent<MeshRenderer>().enabled = false;//TODO isso e pra quando eu decidir oq vai ficar lah mesmo
+        fisicalMap[i, j].layer = 7;
+        if (buildWithTrees)
+        {
+            fisicalMap[i, j].GetComponent<MeshRenderer>().enabled = false;
 
-        //Renderer rend = fisicalMap[i, j].GetComponent<Renderer>();
-        //rend.material.color = Color.black;
+            bushesMap[i, j] = Instantiate(bushes);
+            bushesMap[i, j].transform.SetParent(mapa.transform);
+            bushesMap[i, j].transform.position = position;
+            bushesMap[i, j].name = "bush" + i + " " + j;
+            bushesMap[i, j].layer = 10;
 
-        //var flags = StaticEditorFlags.BatchingStatic | StaticEditorFlags.ContributeGI | StaticEditorFlags.NavigationStatic | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OffMeshLinkGeneration | StaticEditorFlags.ReflectionProbeStatic;
+            Transform tronco = bushesMap[i, j].transform.GetChild(0);
+            if (Random.Range(0, 10) > 2)
+            {
+                tronco.gameObject.SetActive(false);
+            }
+            bushesMap[i, j].transform.position = new Vector3(position.x, position.y - 0.5f, position.z);
+            bushesMap[i, j].transform.localScale = new Vector3(10f, 10f, 10f);
+            bushesMap[i, j].transform.localRotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);//Random.Range(0f, 360f);
 
-        bushesMap[i, j] = Instantiate(bushes);
-        //GameObjectUtility.SetStaticEditorFlags(bushesMap[i, j], flags);
-        bushesMap[i, j].transform.SetParent(fisicalMap[i, j].transform);
-        bushesMap[i, j].name = "bush" + i + " " + j;
-        
-        Transform tronco = bushesMap[i, j].transform.GetChild(0);
-        if(Random.Range(0,10) >3){
-            tronco.gameObject.SetActive(false);
+            #if UNITY_EDITOR
+                var flags = StaticEditorFlags.BatchingStatic | StaticEditorFlags.ContributeGI | StaticEditorFlags.NavigationStatic | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OffMeshLinkGeneration | StaticEditorFlags.ReflectionProbeStatic;
+
+                GameObjectUtility.SetStaticEditorFlags(bushesMap[i, j], flags);
+            #endif
         }
-        bushesMap[i, j].transform.position = new Vector3(0f, -0.05f, 0f);
-        bushesMap[i, j].transform.localScale = new Vector3(1f, 1f, 1f);
-        bushesMap[i, j].transform.localRotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);//Random.Range(0f, 360f);
 
-        //GameObjectUtility.SetStaticEditorFlags(fisicalMap[i, j], flags);
         fisicalMap[i, j].transform.SetParent(mapa.transform);
         fisicalMap[i, j].name = "parede" + i + " " + j;
-        fisicalMap[i, j].transform.position = position;
+        fisicalMap[i, j].transform.position =new Vector3(position.x, position.y +50f, position.z);;
         fisicalMap[i, j].transform.localScale = new Vector3(tamLabirinto, alturaParede, tamLabirinto);
+        fisicalMap[i, j].GetComponent<MeshRenderer>().material.color = Color.black;
+
+        fisicalMap[i, j].AddComponent<NavMeshModifier>();
+        fisicalMap[i, j].GetComponent<NavMeshModifier>().overrideArea = true;
+        fisicalMap[i, j].GetComponent<NavMeshModifier>().area = 1;
+
+    }
+
+    public int isVerticalOrHorizontal(int i, int j) {//1 horizontal, 2 veertical, 0 quina
+        int min = Mathf.Min(i, j);
+        int max = Mathf.Max(i, j);
+
+        if (dim - min < max)
+        {
+            if (max == i)
+                return 2;
+            return 1;
+        } else if (dim - min > max) {
+            if (min == i)
+                return 2;
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    public int isEmptySpace(int i, int j) {
+        if (map[i, j] == 0)
+        {
+            return 1;//Espaco Livre
+        }
+        return 0;//Tem algo nesse espaco
+    }
+
+    public Vector2 fromWorldToLab(Vector3 position) {
+
+        int tam = tamLabirinto;
+        float i = (position.z / tam) % 1;
+        int iInt = (int)(position.z / tam);
+        float j = (position.x / tam) % 1;
+        int jInt = (int)(position.x / tam);
+        int limites = ((dim - 1) / 2) * tam; //vai de -1 isso ate +1 isso
+        //print((int)(position.z / tam));
+
+        //cordenada i da matriz
+        int corrPosiX = Mathf.Abs(i) <= 0.5f ? iInt : (iInt >= 0 ? iInt + 1 : iInt - 1); //recebe o o multiplo de 10 pra cima se for maior que 0,5 e pra baixo se menor que 0,5
+        corrPosiX *= tam;
+        int matPositionX = corrPosiX + limites;
+        if (matPositionX >= 0)
+        {
+            i = matPositionX / tam;
+        }
+
+        //cordenada j da matriz
+        int corrPosiY = Mathf.Abs(j) <= 0.5f ? jInt : (jInt >= 0 ? jInt + 1 : jInt - 1); //recebe o o multiplo de 10 pra cima se for maior que 0,5 e pra baixo se menor que 0,5
+        corrPosiY *= tam;
+        int matPositionY = corrPosiY + limites;
+        if (matPositionY >= 0)
+        {
+            j = matPositionY / tam;
+        }
+
+        return new Vector2(i, j);
+    }
+
+    public Vector3 fromLabToWorld(Vector2 cord) {
+        float i, j;
+        float init = -1*(((dim - 1) * 10) / 2);//inicio do labirinto
+        i = init + 10 * cord.x;
+        j = init + 10 * cord.y;
+
+        return new Vector3(j, 2, i);
     }
 }

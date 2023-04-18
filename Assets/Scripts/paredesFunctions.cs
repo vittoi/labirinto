@@ -16,14 +16,12 @@ public class paredesFunctions : MonoBehaviour
     private Transform outside;
     private Transform inside;
     private Text txt;
-    private tipAction tip;
     private Transform player;
     private GameObject canvas;
     private inventario inv;
     void Awake()
     {
         player = GameObject.Find("Player").transform;
-        tip = GameObject.Find("tipAction").GetComponent<tipAction>();
         canvas = GameObject.Find("menuCanvas");
         inv = canvas.GetComponent<inventario>();
 
@@ -60,14 +58,14 @@ public class paredesFunctions : MonoBehaviour
 
     void tipByProximity(){
         if(Vector3.Distance(player.position, transform.position) < 6f){
-            tip.showText("\"Pressione E para abrir\"");
+            Manager.Instance.messagetip.showText("\"Pressione E para abrir\"");
 
             if(Input.GetKeyDown(KeyCode.E)){
                 cobrar();
-                tip.fadeOut();
+                Manager.Instance.messagetip.fadeOut();
             }
         }else if(Vector3.Distance(player.position, transform.position) < 8f){
-           tip.fadeOut();
+            Manager.Instance.messagetip.fadeOut();
            
         }
     }

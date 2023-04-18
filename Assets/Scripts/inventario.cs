@@ -9,10 +9,17 @@ public class inventario : MonoBehaviour
     public RectTransform barraFullTime;
     public RectTransform estoquePrincipal;
     public List<GameObject> itemTest = new List<GameObject>();
+    public GameObject numberBar;
+    public bool inCd = false;
+    public bool itemSucessfullyUsed = false;
 
+    private int slotSelected = 0;
     private List<int> itemId = new List<int>();
     private List<GameObject> bts = new List<GameObject>();//Lista com os ids dos itens, e o index é onde ele está no inventario
-    private tipAction tip;
+
+    private itensController itensC;
+    
+    
     public struct transferencia {
         public int index;
         public Transform pai;
@@ -22,22 +29,29 @@ public class inventario : MonoBehaviour
     private int firstEmpty = 0;
     private transferencia itemAtual;
     private bool bolsa = false;
+    private int qtdAcionado = 0;
+    private Transform player;
     // Start is called before the first frame update
     void Awake(){
         initializeLists();
-        tip = GameObject.Find("tipAction").GetComponent<tipAction>();
+        itensC = GetComponent<itensController>();
+        player = Manager.Instance.player;
     }
     void Start()
     {
         itemAtual.index = -1;
+        foreach (var item in itemTest)
+        {
+            addItem(Instantiate(item));
+        }
         desenhaMenu();
     }
     void initializeLists(){
-        for(int i = 0; i < 40; i++){
+        for(int i = 0; i < 34; i++){
             itemId.Add(-1);
 
             bts.Add(Instantiate(emptyBt));
-            Transform parent = i<10 ? barraFullTime : estoquePrincipal;
+            Transform parent = i<4 ? barraFullTime : estoquePrincipal;
             bts[i].transform.SetParent(parent);
             bts[i].name = "Slot"+ i;
             bts[i].transform.localScale = new Vector3(1,1,1);
@@ -45,24 +59,93 @@ public class inventario : MonoBehaviour
     }
     // Update is called once per frame
     void Update()
-    {
-        if(Input.GetKeyDown(KeyCode.J)){
-            
-            addItem(Instantiate(itemTest[1]));
+    { 
+        if (qtdAcionado > 0 && itemSucessfullyUsed) {
+            consumeItem(qtdAcionado);
+            itemSucessfullyUsed = false;
         }
-        if(Input.GetKeyDown(KeyCode.Q)){
-            
-            addItem(Instantiate(itemTest[2]));
+
+        if (Input.GetMouseButtonDown(0) && Time.timeScale != 0)
+        {
+            Transform item = bts[slotSelected].transform.childCount >1 ? bts[slotSelected].transform.GetChild(1): null;
+            ItemEx i = item != null ? item.GetComponent<ItemEx>(): null;
+            if (i && i.id >= 100 && itensC.timeCd <= 0 && player.position.y <5f)
+            {
+                if (itensC.acionaItem(i, item))
+                {
+                    qtdAcionado = i.qtd;
+                }
+            }
+            else {
+                //Todo meiti som e faz algo na tela pra mostrar q ta bloqueado
+            }
         }
-        if(Input.GetKeyDown(KeyCode.I)){
+        selectSlot();
+        scrollSlot();
+
+        if (Input.GetKeyDown(KeyCode.I) || Input.GetKeyDown(KeyCode.Tab)){
             estoquePrincipal.transform.parent.parent.gameObject.SetActive(!bolsa);
             bolsa = !bolsa;
         }
     }
+    void consumeItem(int qtd) {
+        if (qtd > 1)
+        {
+            atualizaQtd(slotSelected, qtd - 1);
+        }
+        else
+        {
+            esvaziaSlot(GameObject.Find("Slot" + slotSelected));
+        }
+    }
+
+    void scrollSlot() {
+        float input = Input.mouseScrollDelta.y;
+        if (input != 0) {
+            numberBar.transform.GetChild(slotSelected).GetChild(0).gameObject.SetActive(false);
+            if (slotSelected == 3 && input == -1) {
+                slotSelected = 0;
+            } else if (slotSelected == 0 && input == 1){
+                slotSelected = 3;
+            }
+            else {
+                slotSelected -= (int)input;
+            }
+        }
+
+
+    }
+    void selectSlot() {
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            numberBar.transform.GetChild(slotSelected).GetChild(0).gameObject.SetActive(false);
+            slotSelected = 0;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            numberBar.transform.GetChild(slotSelected).GetChild(0).gameObject.SetActive(false);
+            slotSelected = 1;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            numberBar.transform.GetChild(slotSelected).GetChild(0).gameObject.SetActive(false);
+            slotSelected = 2;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            numberBar.transform.GetChild(slotSelected).GetChild(0).gameObject.SetActive(false);
+            slotSelected = 3;
+        }
+
+        if (slotSelected < 0 || slotSelected > 3)
+            slotSelected = 0;
+        
+        numberBar.transform.GetChild(slotSelected).GetChild(0).gameObject.SetActive(true);
+    }
 
     void desenhaMenu()
     {
-        while (barraFullTime.childCount<10) {
+        while (barraFullTime.childCount<4) {
             
             GameObject item = Instantiate(bts[barraFullTime.childCount], barraFullTime.position, Quaternion.identity) as GameObject;
             item.transform.GetChild(0).GetComponentInChildren<Text>().text = "";
@@ -98,7 +181,6 @@ public class inventario : MonoBehaviour
 
     public void trocaItens(GameObject segurado, GameObject destino, GameObject origem) { //Slot que ocupara, slot antigo item segurado
         GameObject itemOnDest = destino.transform.childCount>1 ? destino.transform.GetChild(1).gameObject : null;
-        print(destino.name);
         ItemEx itemSeg = segurado.GetComponent<ItemEx>();
         ItemEx itemDest = itemOnDest!= null? itemOnDest.GetComponent<ItemEx>(): null;
         int iOrig = getIndexByGameObject(origem.transform);
@@ -167,8 +249,8 @@ public class inventario : MonoBehaviour
             }
             
             if(firstEmpty == -1){
-                tip.showText("\" Inventário Cheio\"");
-                tip.fadeOut();
+                Manager.Instance.messagetip.showText("\" Inventário Cheio\"");
+                Manager.Instance.messagetip.fadeOut();
                 
             }
             Destroy(item);
@@ -224,10 +306,16 @@ public class inventario : MonoBehaviour
     }
     private void oculpaEspacoComItem(int index, int qtd, GameObject item){
         item.transform.SetParent(bts[index].transform);
-        item.transform.SetAsLastSibling(); 
-        item.GetComponent<itemFunctions>().enabled = false;
-        item.transform.GetChild(0).gameObject.SetActive(false);
         ItemEx btsItem = item.GetComponent<ItemEx>();//Verificar com quantos components ficaram no slot
+        item.transform.SetAsLastSibling();
+
+        if (btsItem.id < 100)
+        {
+            item.GetComponent<itemFunctions>().enabled = false;
+        }
+        item.transform.GetChild(0).gameObject.SetActive(false);
+        
+        
 
         if(qtd > 0){
             atualizaQtd(index, qtd);
